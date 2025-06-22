@@ -16,6 +16,14 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+app.get("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const longURL = urlDatabase[id]; // get long URL for given short ID
+  const templateVars = { id, longURL };
+  res.render("urls_show", templateVars);
+});
+
+
 app.listen(PORT, () => {
   console.log(`tinyapp listening on port ${PORT}!`);
 });
@@ -28,3 +36,4 @@ app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
+
