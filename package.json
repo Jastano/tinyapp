@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Jastano/tinyapp/issues"
   },
-  "homepage": "https://github.com/Jastano/tinyapp#readme"
+  "homepage": "https://github.com/Jastano/tinyapp#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }
