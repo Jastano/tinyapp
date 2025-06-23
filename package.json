@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "start": "./node_modules/.bin/nodemon -L express_server.js",
-  "test": "echo \"Error: no test specified\" && exit 1"
-},
+    "start": "./node_modules/.bin/nodemon -L express_server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Jastano/tinyapp.git"
@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Jastano/tinyapp#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "ejs": "^3.1.10",
     "express": "^5.1.0"
   },

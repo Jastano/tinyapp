@@ -1,11 +1,11 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-parser"); // <-- Import cookie-parser
 const app = express();
 const PORT = 8080;
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser()); // <-- Use cookie-parser
 
 app.set("view engine", "ejs");
 
@@ -20,25 +20,23 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
-// ROUTES
+// Routes
 
-// Home route
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
-
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-// New URL form
+// Show new URL form with username info
 app.get("/urls/new", (req, res) => {
   const templateVars = { username: req.cookies.username };
   res.render("urls_new", templateVars);
 });
 
-// Show all URLs
+// Show all URLs with username info
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -47,17 +45,12 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-// Show a specific URL
+// Show a specific URL with username info
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
   const templateVars = { id, longURL, username: req.cookies.username };
   res.render("urls_show", templateVars);
-});
-
-// API: JSON version of URLs
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
 });
 
 // Create new short URL
@@ -95,14 +88,14 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
-// LOGIN - set cookie
+// Login route to set username cookie
 app.post("/login", (req, res) => {
   const username = req.body.username;
   res.cookie("username", username);
   res.redirect("/urls");
 });
 
-// LOGOUT - clear cookie
+// Logout route to clear username cookie
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
