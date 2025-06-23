@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Bootstrap CSS -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
@@ -13,16 +14,40 @@
   <body>
     <%- include("partials/_header") %>
 
-    <div class="card text-center">
-      <div class="card-header"></div>
-      <div class="card-body">
-        <h5 class="card-title">TinyURL for: <%= longURL %></h5>
-        <p class="card-text">
-          Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
-        </p>
-        <a href="#">Create New URL</a>
+    <div class="container mt-4">
+      <div class="card text-center">
+        <div class="card-header">
+          Edit Your TinyURL
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">TinyURL for: <%= longURL %></h5>
+          <p class="card-text">
+            Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
+          </p>
+
+          <form method="POST" action="/urls/<%= id %>">
+            <div class="form-group">
+              <label for="longURL">Update Long URL</label>
+              <input
+                type="text"
+                name="longURL"
+                id="longURL"
+                class="form-control"
+                value="<%= longURL %>"
+                required
+              />
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Update</button>
+          </form>
+
+          <form method="POST" action="/urls/<%= id %>/delete" class="mt-3">
+            <button type="submit" class="btn btn-danger">Delete URL</button>
+          </form>
+
+          <a href="/urls" class="btn btn-link mt-3">Back to My URLs</a>
+        </div>
+        <div class="card-footer text-muted"></div>
       </div>
-      <div class="card-footer text-muted"></div>
     </div>
   </body>
 </html>
