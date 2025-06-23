@@ -1,10 +1,7 @@
-// Import the Express library
 const express = require("express");
 
-// Create an Express application
 const app = express();
 
-// Set the port our server will listen on
 const PORT = 8080;
 
 // Function to generate a random 6-character string
@@ -56,11 +53,22 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// Route to handle form submissions  for new short URLs
+// Route to handle form submissions for new short URLs
 app.post("/urls", (req, res) => {
   const id = generateRandomString(); 
   urlDatabase[id] = req.body.longURL;
   res.redirect(`/urls/${id}`); 
+});
+
+// Route to update an existing short URL's long URL
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const newLongURL = req.body.longURL;
+  
+  if (urlDatabase[id]) {
+    urlDatabase[id] = newLongURL;  // Update the long URL in database
+  }
+  res.redirect("/urls");  // Redirect back to the list of URLs
 });
 
 // Deletes URL from your urlDatabase and then redirects back to /urls:
@@ -73,7 +81,7 @@ app.post("/urls/:id/delete", (req, res) => {
 // Route to redirect short URLs to their corresponding long URLs
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
-  const longURL = urlDatabase[id]; // lookup long URL by ID
+  const longURL = urlDatabase[id]; 
 
   if (longURL) {
     res.redirect(longURL); // redirect to the long URL
