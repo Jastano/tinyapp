@@ -63,6 +63,13 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); 
 });
 
+// Deletes URL from your urlDatabase and then redirects back to /urls:
+app.post("/urls/:id/delete", (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];  // Remove the URL from database
+  res.redirect("/urls");   // Redirect back to index page
+});
+
 // Route to redirect short URLs to their corresponding long URLs
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
