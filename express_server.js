@@ -53,6 +53,11 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+
+
 // Create new short URL
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
