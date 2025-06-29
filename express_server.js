@@ -78,7 +78,7 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
-// Show login page
+// login page
 app.get("/login", (req, res) => {
   res.render("login"); 
 });
