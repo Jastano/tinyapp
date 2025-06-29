@@ -1,7 +1,20 @@
 const express = require("express");
-const cookieParser = require("cookie-parser"); // <-- Import cookie-parser
+const cookieParser = require("cookie-parser"); //  Import cookie-parser
 const app = express();
 const PORT = 8080;
+
+const users = { // data store
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -30,33 +43,39 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-// Show new URL form with username info
+// Show new URL form with user info
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies.username };
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  const templateVars = { user };
   res.render("urls_new", templateVars);
 });
 
-// Show all URLs with username info
+// Show all URLs with user info
 app.get("/urls", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies.username,
+    user,
   };
   res.render("urls_index", templateVars);
 });
 
-// Show a specific URL with username info
+// Show a specific URL with user info
 app.get("/urls/:id", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  const templateVars = { id, longURL, username: req.cookies.username };
+  const templateVars = { id, longURL, user };
   res.render("urls_show", templateVars);
 });
 
+// Registration page
 app.get("/register", (req, res) => {
   res.render("register");
 });
-
 
 // Create new short URL
 app.post("/urls", (req, res) => {
@@ -96,13 +115,41 @@ app.get("/u/:id", (req, res) => {
 // Login route to set username cookie
 app.post("/login", (req, res) => {
   const username = req.body.username;
-  res.cookie("username", username);
+  res.cookie("username", username); // <- this will be updated later
   res.redirect("/urls");
 });
 
 // Logout route to clear username cookie
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
+  res.clearCookie("user_id");
+  res.redirect("/urls");
+});
+
+// Handle registration
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+
+  // If either field is empty
+  if (!email || !password) {
+    return res.status(400).send("Email and password cannot be blank.");
+  }
+
+  // Check if email already exists
+  for (let userId in users) {
+    if (users[userId].email === email) {
+      return res.status(400).send("A user with that email already exists.");
+    }
+  }
+
+  const id = generateRandomString();
+  users[id] = {
+    id,
+    email,
+    password // (we’ll hash this later)
+  };
+
+  res.cookie("user_id", id); // Set user_id cookie
   res.redirect("/urls");
 });
 
