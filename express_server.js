@@ -78,6 +78,11 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
+// Show login page
+app.get("/login", (req, res) => {
+  res.render("login"); 
+});
+
 // Create new short URL
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
