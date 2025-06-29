@@ -2,6 +2,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser"); //  Import cookie-parser
 const app = express();
 const PORT = 8080;
+const { getUserByEmail } = require("./helpers");
 
 const users = { // data store
   userRandomID: {
@@ -130,26 +131,26 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
 
-  // If either field is empty
+  // Error: Empty email or password
   if (!email || !password) {
-    return res.status(400).send("Email and password cannot be blank.");
+    return res.status(400).send("Error: Email and password cannot be blank.");
   }
 
-  // Check if email already exists
-  for (let userId in users) {
-    if (users[userId].email === email) {
-      return res.status(400).send("A user with that email already exists.");
-    }
+  // Error: Email already exists
+  const existingUser = getUserByEmail(email, users);
+  if (existingUser) {
+    return res.status(400).send("Error: A user with that email already exists.");
   }
 
+  // Create new user
   const id = generateRandomString();
   users[id] = {
     id,
     email,
-    password // (we’ll hash this later)
+    password
   };
 
-  res.cookie("user_id", id); // Set user_id cookie
+  res.cookie("user_id", id);
   res.redirect("/urls");
 });
 
