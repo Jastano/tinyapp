@@ -34,7 +34,7 @@
       }
       .url-header {
         font-weight: bold;
-        background-color: #f8f9fa; /* light grey bg */
+        background-color: #f8f9fa;
       }
       .url-text {
         flex-grow: 1;
@@ -67,7 +67,7 @@
             <div style="flex: 1;">
               <a href="/u/<%= id %>" target="_blank"><%= id %></a>
             </div>
-            <div class="url-text" style="flex: 3;"><%= urls[id] %></div>
+            <div class="url-text" style="flex: 3;"><%= urls[id].longURL %></div>
             <div class="url-actions" style="width: 120px;">
               <form method="GET" action="/urls/<%= id %>">
                 <button type="submit" class="btn btn-outline-primary btn-sm">

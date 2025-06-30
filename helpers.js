@@ -12,4 +12,15 @@ const getUserByEmail = function(email, users) {
   return null;// No user found with this email
 };
 
-module.exports = { getUserByEmail };
+const urlsForUser = function(id, urlDatabase) {
+  const userUrls = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userUrls;
+};
+
+module.exports = { getUserByEmail, urlsForUser };
+
