@@ -1,5 +1,5 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const app = express();
 const PORT = 8080;
 const { getUserByEmail } = require("./helpers");
@@ -19,7 +19,6 @@ const users = {
   },
 };
 
-
 // Helper to get all URLs that belong to a specific user
 const urlsForUser = function(id, urlDatabase) {
   const userURLs = {};
@@ -33,7 +32,10 @@ const urlsForUser = function(id, urlDatabase) {
 
 // Middleware setup
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['secretKey1', 'secretKey2'], // You can name these whatever
+}));
 app.set("view engine", "ejs");
 
 // Helper to create a random string for user IDs and short URLs
@@ -65,7 +67,7 @@ app.get("/hello", (req, res) => {
 
 // Show new URL form — must be logged in
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (!userId || !users[userId]) {
     return res.redirect("/login");
   }
@@ -76,7 +78,7 @@ app.get("/urls/new", (req, res) => {
 
 // Show all URLs for the logged-in user only
 app.get("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const user = users[userId];
 
   if (!user) {
@@ -93,7 +95,7 @@ app.get("/urls", (req, res) => {
 
 // Show a specific short URL — must own the URL
 app.get("/urls/:id", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const user = users[userId];
   const id = req.params.id;
   const url = urlDatabase[id];
@@ -116,7 +118,7 @@ app.get("/urls/:id", (req, res) => {
 
 // Show register form
 app.get("/register", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (userId && users[userId]) {
     return res.redirect("/urls");
   }
@@ -125,7 +127,7 @@ app.get("/register", (req, res) => {
 
 // Show login form
 app.get("/login", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (userId && users[userId]) {
     return res.redirect("/urls");
   }
@@ -134,7 +136,7 @@ app.get("/login", (req, res) => {
 
 // Handle short URL creation — must be logged in
 app.post("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (!userId || !users[userId]) {
     return res.status(403).send("<h3>Error: You must be logged in to shorten URLs.</h3>");
   }
@@ -149,7 +151,7 @@ app.post("/urls", (req, res) => {
 
 // Handle updating long URL — only owner can update
 app.post("/urls/:id", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const id = req.params.id;
   const url = urlDatabase[id];
 
@@ -171,7 +173,7 @@ app.post("/urls/:id", (req, res) => {
 
 // Handle deleting a short URL — only owner can delete
 app.post("/urls/:id/delete", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const id = req.params.id;
   const url = urlDatabase[id];
 
@@ -212,13 +214,13 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Error: Invalid email or password.");
   }
 
-  res.cookie("user_id", user.id);
+  req.session.user_id = user.id;
   res.redirect("/urls");
 });
 
 // Handle logout
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/login");
 });
 
@@ -240,7 +242,7 @@ app.post("/register", (req, res) => {
 
   const id = generateRandomString();
   users[id] = { id, email, password: hashedPassword };
-  res.cookie("user_id", id);
+  req.session.user_id = id;
   res.redirect("/urls");
 });
 
