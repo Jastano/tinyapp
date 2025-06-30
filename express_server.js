@@ -78,7 +78,7 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
-// login page
+// login page 
 app.get("/login", (req, res) => {
   res.render("login"); 
 });
@@ -118,18 +118,28 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
-// Login route to set username cookie
+// login route
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username); // <- this will be updated later
+  const { email, password } = req.body;
+
+  // check if the email exists in the users object
+  const user = getUserByEmail(email, users);
+
+  // if no user OR password doesn't match, return error
+  if (!user || user.password !== password) {
+    return res.status(403).send("Error: Invalid email or password.");
+  }
+
+  // if valid login, set cookie with their user ID
+  res.cookie("user_id", user.id);
   res.redirect("/urls");
 });
 
-// Logout route to clear username cookie
+
+// Logout route 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login"); // send user to login page after logout
 });
 
 // Handle registration
