@@ -2,70 +2,40 @@ const express = require("express");
 const cookieSession = require("cookie-session");
 const app = express();
 const PORT = 8080;
-const { getUserByEmail } = require("./helpers");
-const bcrypt = require("bcryptjs"); //hash passwords
+const { getUserByEmail, urlsForUser, generateRandomString } = require("./helpers");
+const { users, urlDatabase } = require("./data");
+const bcrypt = require("bcryptjs"); // hash passwords
 
-// user database
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: bcrypt.hashSync("purple-monkey-dinosaur", 10), // hashed password
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: bcrypt.hashSync("dishwasher-funk", 10), // hashed password
-  },
-};
+// --------MIDDLEWARE------
 
-// Helper to get all URLs that belong to a specific user
-const urlsForUser = function(id, urlDatabase) {
-  const userURLs = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userURLs[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userURLs;
-};
-
-// Middleware setup
 app.use(express.urlencoded({ extended: true }));
+
+// handle cookie-based sessions
 app.use(cookieSession({
   name: 'session',
-  keys: ['secretKey1', 'secretKey2'], // You can name these whatever
+  keys: ['secretKey1', 'secretKey2'],
 }));
+
+// use EJS as the templating engine
 app.set("view engine", "ejs");
-
-// Helper to create a random string for user IDs and short URLs
-function generateRandomString() {
-  return Math.random().toString(36).substring(2, 8);
-}
-
-// In-memory short URL database
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "userRandomID",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "userRandomID",
-  },
-};
 
 // ---------- ROUTES ----------
 
+// Home page route — redirect to /urls if logged in, otherwise to /login
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userId = req.session.user_id;
+  if (userId && users[userId]) {
+    return res.redirect("/urls");
+  }
+  return res.redirect("/login");
 });
 
+// Simple hello test route
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-// Show new URL form — must be logged in
+// Show form to create new URL — must be logged in
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
   if (!userId || !users[userId]) {
@@ -76,15 +46,14 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-// Show all URLs for the logged-in user only
+// Show all URLs that belong to the logged-in user
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
 
   if (!user) {
-    return res.status(401).send("<h3>Error: Please <a href='/login'>log in</a> to view your URLs.</h3>");
+    return res.redirect("/login");
   }
-
   const userUrls = urlsForUser(userId, urlDatabase);
   const templateVars = {
     urls: userUrls,
@@ -93,7 +62,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-// Show a specific short URL — must own the URL
+// Show page for a specific short URL — must own the URL
 app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -116,25 +85,33 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// Show register form
+// Show registration form
 app.get("/register", (req, res) => {
   const userId = req.session.user_id;
-  if (userId && users[userId]) {
+  const user = users[userId];
+
+  if (user) {
     return res.redirect("/urls");
   }
-  res.render("register");
+
+  const templateVars = { user: null }; // 👈 Important: pass user for header partials
+  res.render("register", templateVars);
 });
 
 // Show login form
 app.get("/login", (req, res) => {
   const userId = req.session.user_id;
-  if (userId && users[userId]) {
+  const user = users[userId];
+
+  if (user) {
     return res.redirect("/urls");
   }
-  res.render("login");
+
+  const templateVars = { user: null }; // 👈 Important: pass user for header partials
+  res.render("login", templateVars);
 });
 
-// Handle short URL creation — must be logged in
+// Handle new short URL creation — must be logged in
 app.post("/urls", (req, res) => {
   const userId = req.session.user_id;
   if (!userId || !users[userId]) {
@@ -149,7 +126,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-// Handle updating long URL — only owner can update
+// Handle updating a long URL — only owner can update
 app.post("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const id = req.params.id;
@@ -193,7 +170,7 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-// Redirect short URL
+// Redirect short URL to its long URL
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const url = urlDatabase[id];
@@ -204,7 +181,7 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
-// Handle login
+// Handle login form submission
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const user = getUserByEmail(email, users);
@@ -224,7 +201,7 @@ app.post("/logout", (req, res) => {
   res.redirect("/login");
 });
 
-// Handle registration
+// Handle registration form submission
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
 
@@ -237,7 +214,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("Error: A user with that email already exists.");
   }
 
-  // Hash password before saving
+  // hash password before saving
   const hashedPassword = bcrypt.hashSync(password, 10);
 
   const id = generateRandomString();

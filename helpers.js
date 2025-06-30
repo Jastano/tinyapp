@@ -1,26 +1,29 @@
 // This helper function searches the users object for a user with a given email.
 // If it finds one, it returns that user object.
 // If not, it returns null.
-
-const getUserByEmail = function(email, users) {
-  for (const userId in users) {
-    const user = users[userId];
-    if (user.email === email) {
-      return user;// Found the user with matching email, return user object
+const getUserByEmail = (email, users) => {
+  for (let userId in users) {
+    if (users[userId].email === email) {
+      return users[userId];
     }
   }
-  return null;// No user found with this email
+  return null;
 };
 
+// Helper to get all URLs that belong to a specific user
 const urlsForUser = function(id, urlDatabase) {
-  const userUrls = {};
+  const userURLs = {};
   for (const shortURL in urlDatabase) {
     if (urlDatabase[shortURL].userID === id) {
-      userUrls[shortURL] = urlDatabase[shortURL];
+      userURLs[shortURL] = urlDatabase[shortURL];
     }
   }
-  return userUrls;
+  return userURLs;
 };
 
-module.exports = { getUserByEmail, urlsForUser };
+// Helper to create a random string for user IDs and short URLs
+const generateRandomString = function() {
+  return Math.random().toString(36).substring(2, 8);
+};
 
+module.exports = { getUserByEmail, urlsForUser, generateRandomString };
