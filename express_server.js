@@ -3,20 +3,22 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080;
 const { getUserByEmail } = require("./helpers");
+const bcrypt = require("bcryptjs"); //hash passwords
 
 // user database
 const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10), // hashed password
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("dishwasher-funk", 10), // hashed password
   },
 };
+
 
 // Helper to get all URLs that belong to a specific user
 const urlsForUser = function(id, urlDatabase) {
@@ -205,7 +207,8 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const user = getUserByEmail(email, users);
 
-  if (!user || user.password !== password) {
+  // bcrypt password check
+  if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.status(403).send("Error: Invalid email or password.");
   }
 
@@ -232,8 +235,11 @@ app.post("/register", (req, res) => {
     return res.status(400).send("Error: A user with that email already exists.");
   }
 
+  // Hash password before saving
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
   const id = generateRandomString();
-  users[id] = { id, email, password };
+  users[id] = { id, email, password: hashedPassword };
   res.cookie("user_id", id);
   res.redirect("/urls");
 });

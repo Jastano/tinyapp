@@ -1,9 +1,10 @@
 <header>
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
     <a class="navbar-brand" href="/urls">TinyApp</a>
-  
-    <div class="d-flex align-items-center">
+
+    <div class="d-flex align-items-center ml-auto">
       <% if (user) { %>
+        <a href="/urls/new" class="btn btn-light btn-sm mr-2">Create New URL</a>
         <span class="mr-3">Logged in as <strong><%= user.email %></strong></span>
         <form method="POST" action="/logout" class="form-inline">
           <button type="submit" class="btn btn-danger btn-sm">Logout</button>
