@@ -6,9 +6,9 @@ TinyApp is a full-stack web application built with **Node.js** and **Express** t
 
 ##  Final Product
 
-!["Screenshot of URLs page"](https://github.com/Jastano/tinyapp/blob/master/docs/urls%20new.png?raw=trueg)
-!["Screenshot of Register page"](https://github.com/Jastano/tinyapp/blob/master/docs/urls.png?raw=true)
-!["Screenshot of Create New URL page"](https://github.com/Jastano/tinyapp/blob/master/docs/register.png?raw=trug)
+!["Screenshot of URLs page"](https://github.com/Jastano/tinyapp/blob/master/docs/urls.png)
+!["Screenshot of Register page"](https://github.com/Jastano/tinyapp/blob/master/docs/register.png)
+!["Screenshot of Create New URL page"](https://github.com/Jastano/tinyapp/blob/master/docs/urls%20new.png)
 
 ---
 
