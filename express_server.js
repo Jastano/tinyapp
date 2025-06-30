@@ -1,52 +1,59 @@
 const express = require("express");
-const cookieParser = require("cookie-parser"); //  Import cookie-parser
+const cookieParser = require("cookie-parser"); // Import cookie-parser to manage cookies
 const app = express();
 const PORT = 8080;
-const { getUserByEmail } = require("./helpers");
+const { getUserByEmail } = require("./helpers"); // Import helper to find user by email
 
-const users = { // data store
+// user database
+const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
     password: "purple-monkey-dinosaur",
   },
-  user2RandomID: {
+    user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
 };
 
-// Middleware
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // <-- Use cookie-parser
+// Middleware setup
+app.use(express.urlencoded({ extended: true })); 
+app.use(cookieParser()); // parse cookies
 
+// Set EJS as view engine for .ejs templates
 app.set("view engine", "ejs");
 
-// Helper function
+// Helper to create a random string for user IDs and short URLs
 function generateRandomString() {
   return Math.random().toString(36).substring(2, 8);
 }
 
-// Our URL database
+// In-memory short URL database
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
 
-// Routes
+// ---------- ROUTES ----------
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+// Test route
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-// Show new URL form with user info
+// Show new URL form — must be logged in
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
+  if (!userId || !users[userId]) {
+    return res.redirect("/login"); // If not logged in, send to login page
+  }
   const user = users[userId];
   const templateVars = { user };
   res.render("urls_new", templateVars);
@@ -63,7 +70,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-// Show a specific URL with user info
+// Show a specific short URL
 app.get("/urls/:id", (req, res) => {
   const userId = req.cookies["user_id"];
   const user = users[userId];
@@ -73,24 +80,38 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// Registration page
+// Show register form — redirect if already logged in
 app.get("/register", (req, res) => {
+  const userId = req.cookies["user_id"];
+  if (userId && users[userId]) {
+    return res.redirect("/urls"); // Already logged in → go to dashboard
+  }
   res.render("register");
 });
 
-// login page 
+// Show login form — redirect if already logged in
 app.get("/login", (req, res) => {
-  res.render("login"); 
+  const userId = req.cookies["user_id"];
+  if (userId && users[userId]) {
+    return res.redirect("/urls"); // Already logged in → go to dashboard
+  }
+  res.render("login");
 });
 
-// Create new short URL
+// Handle short URL creation — must be logged in
 app.post("/urls", (req, res) => {
-  const id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
-  res.redirect(`/urls/${id}`);
+  const userId = req.cookies["user_id"];
+  if (!userId || !users[userId]) {
+    // Prevent unauthenticated users from submitting form via curl/postman
+    return res.status(403).send("<h3>Error: You must be logged in to shorten URLs.</h3>");
+  }
+
+  const id = generateRandomString(); // new short URL id
+  urlDatabase[id] = req.body.longURL; // save long URL to database
+  res.redirect(`/urls/${id}`); // redirect to the URL details page
 });
 
-// Edit long URL
+// Handle updating long URL
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newLongURL = req.body.longURL;
@@ -100,76 +121,66 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
-// Delete a short URL
+//  Handle deleting a short URL
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
   res.redirect("/urls");
 });
 
-// Redirect short URL to long URL
+// Public redirect route
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
   if (longURL) {
     res.redirect(longURL);
   } else {
-    res.status(404).send("Short URL not found.");
+    res.status(404).send("<h3>Error: Short URL not found.</h3>"); // invalid short URL id
   }
 });
 
-// login route
+// Handle login
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
+  const user = getUserByEmail(email, users); // use helper to look up user
 
-  // check if the email exists in the users object
-  const user = getUserByEmail(email, users);
-
-  // if no user OR password doesn't match, return error
   if (!user || user.password !== password) {
     return res.status(403).send("Error: Invalid email or password.");
   }
 
-  // if valid login, set cookie with their user ID
-  res.cookie("user_id", user.id);
+  res.cookie("user_id", user.id); // set session cookie
   res.redirect("/urls");
 });
 
-
-// Logout route 
+// Handle logout
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
-  res.redirect("/login"); // send user to login page after logout
+  res.clearCookie("user_id"); // clear login session
+  res.redirect("/login"); // redirect to login screen
 });
 
 // Handle registration
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
 
-  // Error: Empty email or password
+  // Error: Missing email or password
   if (!email || !password) {
     return res.status(400).send("Error: Email and password cannot be blank.");
   }
 
-  // Error: Email already exists
+  // Error: Duplicate user
   const existingUser = getUserByEmail(email, users);
   if (existingUser) {
     return res.status(400).send("Error: A user with that email already exists.");
   }
 
-  // Create new user
+  // Create new user and log them in
   const id = generateRandomString();
-  users[id] = {
-    id,
-    email,
-    password
-  };
-
+  users[id] = { id, email, password };
   res.cookie("user_id", id);
   res.redirect("/urls");
 });
 
-// Start server
+// Start the server
 app.listen(PORT, () => {
   console.log(`tinyapp listening on port ${PORT}!`);
 });
